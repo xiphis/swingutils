@@ -46,6 +46,7 @@ public final class HtmlColor {
         return c;
     }
 
+    public static final Color transparent = new Color(0, 0, 0, 0);
     public static final Color aliceblue = new Color(0xf0f8ff);
     public static final Color antiquewhite = new Color(0xfaebd7);
     public static final Color aqua = new Color(0x00ffff);
@@ -53,7 +54,7 @@ public final class HtmlColor {
     public static final Color azure = new Color(0xf0ffff);
     public static final Color beige = new Color(0xf5f5dc);
     public static final Color bisque = new Color(0xffe4c4);
-    public static final Color black = new Color(0x000000);
+    public static final Color black = Color.black;
     public static final Color blanchedalmond = new Color(0xffebcd);
     public static final Color blue = new Color(0x0000ff);
     public static final Color blueviolet = new Color(0x8a2be2);
@@ -96,7 +97,7 @@ public final class HtmlColor {
     public static final Color ghostwhite = new Color(0xf8f8ff);
     public static final Color gold = new Color(0xffd700);
     public static final Color goldenrod = new Color(0xdaa520);
-    public static final Color gray = new Color(0x808080);
+    public static final Color gray = Color.gray;
     public static final Color green = new Color(0x008000);
     public static final Color greenyellow = new Color(0xadff2f);
     public static final Color honeydew = new Color(0xf0fff0);
@@ -123,10 +124,10 @@ public final class HtmlColor {
     public static final Color lightslategray = new Color(0x778899);
     public static final Color lightsteelblue = new Color(0xb0c4de);
     public static final Color lightyellow = new Color(0xffffe0);
-    public static final Color lime = new Color(0x00ff00);
+    public static final Color lime = Color.green;
     public static final Color limegreen = new Color(0x32cd32);
     public static final Color linen = new Color(0xfaf0e6);
-    public static final Color magenta = new Color(0xff00ff);
+    public static final Color magenta = Color.magenta;
     public static final Color maroon = new Color(0x800000);
     public static final Color mediumaquamarine = new Color(0x66cdaa);
     public static final Color mediumblue = new Color(0x0000cd);
@@ -160,7 +161,7 @@ public final class HtmlColor {
     public static final Color plum = new Color(0xdda0dd);
     public static final Color powderblue = new Color(0xb0e0e6);
     public static final Color purple = new Color(0x800080);
-    public static final Color red = new Color(0xff0000);
+    public static final Color red = Color.red;
     public static final Color rosybrown = new Color(0xbc8f8f);
     public static final Color royalblue = new Color(0x4169e1);
     public static final Color saddlebrown = new Color(0x8b4513);
@@ -183,9 +184,9 @@ public final class HtmlColor {
     public static final Color turquoise = new Color(0x40e0d0);
     public static final Color violet = new Color(0xee82ee);
     public static final Color wheat = new Color(0xf5deb3);
-    public static final Color white = new Color(0xffffff);
+    public static final Color white = Color.white;
     public static final Color whitesmoke = new Color(0xf5f5f5);
-    public static final Color yellow = new Color(0xffff00);
+    public static final Color yellow = Color.yellow;
     public static final Color yellowgreen = new Color(0x9acd32);
 
     static {

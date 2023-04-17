@@ -5,15 +5,15 @@ import org.jsoup.nodes.Node;
 import org.jsoup.nodes.TextNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.w3c.dom.css.CSSStyleDeclaration;
 
 import javax.swing.*;
 import javax.swing.border.Border;
-import javax.swing.border.EtchedBorder;
 import java.awt.*;
 import java.awt.font.TextAttribute;
 import java.net.URL;
+import java.text.AttributedCharacterIterator;
 import java.util.Collections;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Vector;
 import java.util.function.IntBinaryOperator;
@@ -23,6 +23,16 @@ import java.util.regex.Pattern;
 
 public class HtmlPanel extends JPanel {
     private static final Pattern WHITESPACE = Pattern.compile("\\s+");
+
+    private static final Map<TextAttribute, String> TEXT_ATTRIBUTE_MONOSPACE = Collections.singletonMap(TextAttribute.FAMILY, "Monospaced");
+    private static final Map<TextAttribute, Float> TEXT_ATTRIBUTE_WEIGHT_BOLD = Collections.singletonMap(TextAttribute.WEIGHT, TextAttribute.WEIGHT_BOLD);
+    private static final Map<TextAttribute, Float> TEXT_ATTRIBUTE_WEIGHT_EXTRABOLD = Collections.singletonMap(TextAttribute.WEIGHT, TextAttribute.WEIGHT_EXTRABOLD);
+    private static final Map<TextAttribute, Float> TEXT_ATTRIBUTE_POSTURE_OBLIQUE = Collections.singletonMap(TextAttribute.POSTURE, TextAttribute.POSTURE_OBLIQUE);
+    private static final Map<TextAttribute, Integer> TEXT_ATTRIBUTE_SUPERSCRIPT_SUB = Collections.singletonMap(TextAttribute.SUPERSCRIPT, TextAttribute.SUPERSCRIPT_SUB);
+    private static final Map<TextAttribute, Integer> TEXT_ATTRIBUTE_SUPERSCRIPT_SUPER = Collections.singletonMap(TextAttribute.SUPERSCRIPT, TextAttribute.SUPERSCRIPT_SUPER);
+    private static final Map<TextAttribute, Boolean> TEXT_ATTRIBUTE_STRIKETHROUGH_ON = Collections.singletonMap(TextAttribute.STRIKETHROUGH, TextAttribute.STRIKETHROUGH_ON);
+    private static final Map<TextAttribute, Integer> TEXT_ATTRIBUTE_UNDERLINE_ON = Collections.singletonMap(TextAttribute.UNDERLINE, TextAttribute.UNDERLINE_ON);
+
 
     private final Logger log = LoggerFactory.getLogger(getClass());
 
@@ -79,14 +89,13 @@ public class HtmlPanel extends JPanel {
                     c.gridx = 0;
                     c.gridy = y;
                     String text = body.tagName().equals("ul") ? "\u2202" : String.valueOf(y+1);
-                    JLabel b = new JLabel(text);
-                    add(b, c);
-                    context.applyStyle(el, b);
+                    add(this, new JLabel(text), c, el, null);
+
                     c = new GridBagConstraints();
                     c.gridx = 1;
                     c.gridy = y;
                     c.fill = GridBagConstraints.HORIZONTAL;
-                    new HtmlPanel(context, el).addAndApply(this, c);
+                    add(this, new HtmlPanel(context, el), c, el, null);
                     y++;
                 }
                 break;
@@ -124,7 +133,7 @@ public class HtmlPanel extends JPanel {
                             continue;
                     }
                     c.gridy = y++;
-                    new HtmlPanel(context, el).addAndApply(this, c);
+                    add(this, new HtmlPanel(context, el), c, el, null);
                 }
                 break;
             }
@@ -149,33 +158,12 @@ public class HtmlPanel extends JPanel {
                     break;
                 }
 
-                setLayout(new GridBagLayout());
-                renderContent(this, body, getFont(), getForeground(), null);
+                setLayout(new HtmlLayout());
+                renderContent(this, body, new Attr(getFont(), getForeground(), null));
                 break;
         }
         if (border != null) {
             setBorder(border);
-        }
-    }
-
-    void addAndApply(Container container) {
-        container.add(this);
-        applyStyle();
-    }
-
-    void addAndApply(Container container, Object constraint) {
-        container.add(this, constraint);
-        applyStyle();
-    }
-
-    void applyStyle() {
-        context.applyStyle(body, this);
-        if (body.hasAttr("bgcolor")) {
-            String text = body.attr("bgcolor");
-            Color color = HtmlColor.getColor(text);
-            if (color != null) {
-                setBackground(color);
-            }
         }
     }
 
@@ -192,7 +180,7 @@ public class HtmlPanel extends JPanel {
             c.gridheight = 1;
             c.fill = GridBagConstraints.HORIZONTAL;
 
-            new HtmlPanel(context, el).addAndApply(this, c);
+            add(this, new HtmlPanel(context, el), c, el, null);
         }
 
         JPanel nav = null;
@@ -205,12 +193,10 @@ public class HtmlPanel extends JPanel {
                 c.gridheight = 1;
                 //c.fill = GridBagConstraints.HORIZONTAL;
                 c.anchor = GridBagConstraints.CENTER;
-                nav = new JPanel();
-                nav.setLayout(new FlowLayout());
-                add(nav, c);
-                context.applyStyle(el, nav);
+                nav = new JPanel(new FlowLayout());
+                add(this, nav, c, el, null);
             }
-            new HtmlPanel(context, el).addAndApply(nav);
+            add(nav, new HtmlPanel(context, el), null, el, null);
         }
 
         int asidey = y;
@@ -223,7 +209,7 @@ public class HtmlPanel extends JPanel {
             c.gridheight = 1;
             c.fill = GridBagConstraints.HORIZONTAL;
 
-            new HtmlPanel(context, el).addAndApply(this, c);
+            add(this, new HtmlPanel(context, el), c, el, null);
         }
 
         for (Element el : elementsByTag(body, "article")) {
@@ -233,7 +219,7 @@ public class HtmlPanel extends JPanel {
             c.gridy = y++;
             c.gridheight = 1;
             c.fill = GridBagConstraints.HORIZONTAL;
-            new HtmlPanel(context, el).addAndApply(this, c);
+            add(this, new HtmlPanel(context, el), c, el, null);
         }
 
         JPanel aside = null;
@@ -250,10 +236,9 @@ public class HtmlPanel extends JPanel {
                 c.fill = GridBagConstraints.BOTH;
                 aside = new JPanel();
                 aside.setLayout(new BoxLayout(aside, BoxLayout.Y_AXIS));
-                add(aside, c);
-                context.applyStyle(el, aside);
+                add(this, aside, c, el, null);
             }
-            new HtmlPanel(context, el).addAndApply(aside);
+            add(aside, new HtmlPanel(context, el), null, el, null);
         }
         for (Element el : elementsByTag(body, "footer")) {
             GridBagConstraints c = new GridBagConstraints();
@@ -262,7 +247,7 @@ public class HtmlPanel extends JPanel {
             c.gridy = y++;
             c.gridheight = 1;
             c.fill = GridBagConstraints.HORIZONTAL;
-            new HtmlPanel(context, el).addAndApply(this, c);
+            add(this, new HtmlPanel(context, el), c, el, null);
         }
     }
 
@@ -283,7 +268,7 @@ public class HtmlPanel extends JPanel {
                     if (d.hasAttr("rowspan")) {
                         c.gridheight = Integer.parseUnsignedInt(d.attr("rowspan"));
                     }
-                    new HtmlPanel(context, d, border).addAndApply(this, c);
+                    add(this, new HtmlPanel(context, d, border), c, d, null);
                 }
             }
         }
@@ -309,7 +294,7 @@ public class HtmlPanel extends JPanel {
                     if (d.hasAttr("rowspan")) {
                         c.gridheight = Integer.parseUnsignedInt(d.attr("rowspan"));
                     }
-                    new HtmlPanel(context, d, border).addAndApply(this, c);
+                    add(this, new HtmlPanel(context, d, border), c, d, null);
                 }
                 y++;
             }
@@ -336,82 +321,46 @@ public class HtmlPanel extends JPanel {
                     if (d.hasAttr("rowspan")) {
                         c.gridheight = Integer.parseUnsignedInt(d.attr("rowspan"));
                     }
-                    new HtmlPanel(context, d, border).addAndApply(this, c);
+                    add(this, new HtmlPanel(context, d, border), c, d, null);
                 }
                 y++;
             }
         }
     }
 
-    private void renderContent(JPanel panel, Element body, Font f, Color fg, Color bg) {
-        try {
-            renderContent(panel, body, f, fg, bg, null);
-        } catch (Exception ex) {
-            log.atError().setCause(ex).log("Exception rendering element: {}", body.html());
+    private void add(JPanel panel, JComponent comp, Node n, Attr attr) {
+        add(panel, comp, n, n, attr);
+    }
+
+    private void add(JPanel panel, JComponent comp, Object constraint,
+                     Node n, Attr attr) {
+        if (attr != null) {
+            attr.apply(comp);
+        }
+        panel.add(comp, constraint);
+        context.applyStyle(comp, n);
+        if (attr != null) {
+            attr.font = comp.getFont();
+            attr.fgColor = comp.getForeground();
+            attr.bgColor = comp.getBackground();
         }
     }
 
-    private JPanel newParagraph(final JPanel panel, final Element body, final Font f, final Color fg, final Color bg) {
-        JPanel paragraph = new JPanel(new FlowLayout(FlowLayout.LEADING, 0, 0));
-        if (f != null) {
-            paragraph.setFont(f);
-        }
-        if (fg != null) {
-            paragraph.setForeground(fg);
-        }
-        if (bg != null) {
-            paragraph.setBackground(bg);
-        }
-        paragraph.setBorder(BorderFactory.createEmptyBorder());
-        context.applyStyle(body, paragraph);
-        GridBagConstraints c = new GridBagConstraints();
-        c.gridx = 0; c.gridwidth = 1;
-        c.gridy = panel.getComponentCount(); c.gridheight = 1;
-        c.fill = GridBagConstraints.HORIZONTAL;
-        panel.add(paragraph, c);
-        return paragraph;
-    }
-    private JPanel renderContent(final JPanel panel, final Element body, final Font f, final Color fg, final Color bg,
-                                 JPanel paragraph) {
+    private void renderContent(JPanel panel, Element body, Attr attr) {
         for (Node n : body.childNodes()) {
-            if (paragraph == null) {
-                paragraph = newParagraph(panel, body, f, fg, bg);
-            }
-
             if (n instanceof Element) {
                 Element el = (Element) n;
                 switch (el.tagName()) {
-                    case "br":
-                        if (paragraph.getComponentCount() > 0) {
-                            paragraph = null;
-                        }
-                        continue;
-                    case "h1":
-                    case "h2":
-                    case "h3":
-                    case "h4":
-                    case "h5":
-                    case "h6":
-                        paragraph = newParagraph(panel, el, f, fg, bg);
-                        renderContent(panel, el, paragraph.getFont(), paragraph.getForeground(), paragraph.getBackground(), paragraph);
-                        paragraph = null;
-                        continue;
-                    case "hr": {
-                        JSeparator separator = new JSeparator();
-                        panel.add(separator);
-                        context.applyStyle(el, separator);
-                        paragraph = null;
+                    case "br": {
+                        add(panel, new JLabel(" "), el, attr.copy());
                         continue;
                     }
-                    case "p":
-                    case "div":
-                        renderContent(panel, el, f, fg, bg);
-                        paragraph = null;
+                    case "hr": {
+                        add(panel, new JSeparator(), el, attr.copy());
                         continue;
+                    }
                     case "table":
-                        paragraph = newParagraph(panel, el, f, fg, bg);
-                        new HtmlPanel(context, el).addAndApply(paragraph);
-                        paragraph = null;
+                        add(panel, new HtmlPanel(context, el), el,  attr.copy());
                         continue;
                     case "img": {
                         try {
@@ -429,8 +378,7 @@ public class HtmlPanel extends JPanel {
                                 if (el.hasAttr("alt")) {
                                     label.setToolTipText(el.attr("alt"));
                                 }
-                                context.applyStyle(el, label);
-                                paragraph.add(label);
+                                add(panel, label, el, attr.copy());
                             }
                         } catch (Exception ex) {
                             log.atError().setCause(ex)
@@ -439,60 +387,48 @@ public class HtmlPanel extends JPanel {
                         continue;
                     }
 
-                    case "span": {
-                        paragraph = renderContent(panel, el, f, fg, bg, paragraph);
-                        continue;
-                    }
                     case "tt":
                     case "code":
-                        paragraph = renderContent(panel, el, f.deriveFont(Collections.singletonMap(TextAttribute.FAMILY, "Monospaced")), fg, bg, paragraph);
+                        renderContent(panel, el, attr.deriveFont(TEXT_ATTRIBUTE_MONOSPACE));
                         continue;
                     case "b":
-                        paragraph = renderContent(panel, el, f.deriveFont(Collections.singletonMap(TextAttribute.WEIGHT, TextAttribute.WEIGHT_BOLD)), fg, bg, paragraph);
+                        renderContent(panel, el, attr.deriveFont(TEXT_ATTRIBUTE_WEIGHT_BOLD));
                         continue;
                     case "i":
                     case "em":
                     case "cite":
                     case "dfn":
-                        paragraph = renderContent(panel, el, f.deriveFont(Collections.singletonMap(TextAttribute.POSTURE, TextAttribute.POSTURE_OBLIQUE)), fg, bg, paragraph);
+                        renderContent(panel, el, attr.deriveFont(TEXT_ATTRIBUTE_POSTURE_OBLIQUE));
                         continue;
                     case "strong":
-                        paragraph = renderContent(panel, el, f.deriveFont(Collections.singletonMap(TextAttribute.WEIGHT, TextAttribute.WEIGHT_EXTRABOLD)), fg, bg, paragraph);
+                        renderContent(panel, el, attr.deriveFont(TEXT_ATTRIBUTE_WEIGHT_EXTRABOLD));
                         continue;
                     case "sub":
-                        paragraph = renderContent(panel, el, f.deriveFont(Collections.singletonMap(TextAttribute.SUPERSCRIPT, TextAttribute.SUPERSCRIPT_SUB)), fg, bg, paragraph);
+                        renderContent(panel, el, attr.deriveFont(TEXT_ATTRIBUTE_SUPERSCRIPT_SUB));
                         continue;
                     case "sup":
-                        paragraph = renderContent(panel, el, f.deriveFont(Collections.singletonMap(TextAttribute.SUPERSCRIPT, TextAttribute.SUPERSCRIPT_SUPER)), fg, bg, paragraph);
+                        renderContent(panel, el, attr.deriveFont(TEXT_ATTRIBUTE_SUPERSCRIPT_SUPER));
                         continue;
                     case "small":
-                        paragraph = renderContent(panel, el, f.deriveFont(f.getSize2D() - 1f), fg, bg, paragraph);
+                        renderContent(panel, el, attr.deriveFontDelta( - 1f));
                         continue;
                     case "big":
-                        paragraph = renderContent(panel, el, f.deriveFont(f.getSize2D() + 1f), fg, bg, paragraph);
-                        continue;
-                    case "mark":
-                        paragraph = renderContent(panel, el, f, fg, bg, paragraph);
+                        renderContent(panel, el, attr.deriveFontDelta( + 1f));
                         continue;
                     case "del":
-                        paragraph = renderContent(panel, el, f.deriveFont(Collections.singletonMap(TextAttribute.STRIKETHROUGH, TextAttribute.STRIKETHROUGH_ON)), fg, bg, paragraph);
+                        renderContent(panel, el, attr.deriveFont(TEXT_ATTRIBUTE_STRIKETHROUGH_ON));
                         continue;
                     case "ins":
-                        paragraph = renderContent(panel, el, f.deriveFont(Collections.singletonMap(TextAttribute.UNDERLINE, TextAttribute.UNDERLINE_ON)), fg, bg, paragraph);
-                        continue;
-
-                    case "form":
-                        panel.add(new HtmlForm(context, el));
-                        paragraph = null;
+                        renderContent(panel, el, attr.deriveFont(TEXT_ATTRIBUTE_UNDERLINE_ON));
                         continue;
                     case "label": {
                         String content = el.wholeText();
                         String plain = el.text();
                         JLabel label = new JLabel(plain.equals(content) ? plain : "<HTML>" + content);
-                        paragraph.add(label);
-                        if (el.hasAttr("for")) {
-                            form().addLabel(el, label);
-                        }
+                        add(panel, label, el, attr.copy());
+                        //if (el.hasAttr("for")) {
+                        //    form().addLabel(el, label);
+                        //}
                         continue;
                     }
                     case "textarea": {
@@ -510,16 +446,16 @@ public class HtmlPanel extends JPanel {
                         }
                         JTextArea textArea = new JTextArea(null, el.text(), rows, cols);
 
-                        if (el.hasAttr("id")) {
-                            form().addInput(el, textArea);
-                        }
+                        //if (el.hasAttr("id")) {
+                        //    form().addInput(el, textArea);
+                        //}
                         if (el.hasAttr("name")) {
                             textArea.setName(el.attr("name"));
                         }
                         if (el.hasAttr("disabled")) {
                             textArea.setEnabled(false);
                         }
-                        paragraph.add(textArea);
+                        add(panel, textArea, el, attr.copy());
                         continue;
                     }
                     case "select": {
@@ -533,16 +469,16 @@ public class HtmlPanel extends JPanel {
                             options.add(new ComboBoxOption(value, text));
                         }
                         JComboBox<ComboBoxOption> comboBox = new JComboBox<>(options);
-                        if (el.hasAttr("id")) {
-                            form().addInput(el, comboBox);
-                        }
+                        //if (el.hasAttr("id")) {
+                        //    form().addInput(el, comboBox);
+                        //}
                         if (el.hasAttr("name")) {
                             comboBox.setName(el.attr("name"));
                         }
                         if (el.hasAttr("disabled")) {
                             comboBox.setEnabled(false);
                         }
-                        paragraph.add(comboBox);
+                        add(panel, comboBox, el, attr.copy());
                         continue;
                     }
                     case "meter":
@@ -557,29 +493,29 @@ public class HtmlPanel extends JPanel {
                         if (el.hasAttr("value")) {
                             progressBar.setValue(Integer.parseInt(el.attr("value")));
                         }
-                        if (el.hasAttr("id")) {
-                            form().addInput(el, progressBar);
-                        }
+                        //if (el.hasAttr("id")) {
+                        //    form().addInput(el, progressBar);
+                        //}
                         if (el.hasAttr("name")) {
                             progressBar.setName(el.attr("name"));
                         }
                         if (el.hasAttr("disabled")) {
                             progressBar.setEnabled(false);
                         }
-                        paragraph.add(progressBar);
+                        add(panel, progressBar, el, attr.copy());
                         continue;
                     }
                     case "button": {
                         JButton button;
                         switch (el.attr("type")) {
                             case "button":
-                                button = new JButton(el.text());
+                                button = new JButton(context.newAction(el));
                                 break;
                             case "reset":
-                                button = new JButton(el.text());
+                                button = new JButton(context.newAction(el));
                                 break;
                             case "submit":
-                                button = new HtmlSubmit(new HtmlForm.SubmitAction(this, el.text()));
+                                button = new JButton(context.newAction(el));
                                 break;
                             default:
                                 continue;
@@ -590,17 +526,17 @@ public class HtmlPanel extends JPanel {
                         if (el.hasAttr("disabled")) {
                             button.setEnabled(false);
                         }
-                        paragraph.add(button);
+                        add(panel, button, el, attr.copy());
                     }
                     case "input": {
                         JComponent component;
                         switch (el.attr("type")) {
                             case "submit": {
-                                component = new HtmlSubmit(new HtmlForm.SubmitAction(this, el.hasAttr("value") ? el.attr("value") : "Submit"));
+                                component = new JButton(context.newAction(el, el.hasAttr("value") ? el.attr("value") : "Submit"));
                                 break;
                             }
                             case "checkbox":
-                                component = new JCheckBox();
+                                component = new JCheckBox(context.newAction(el));
                                 break;
                             case "color":
                                 component = new JColorChooser();
@@ -611,7 +547,7 @@ public class HtmlPanel extends JPanel {
                                 component = new JPasswordField();
                                 break;
                             case "radio":
-                                component = new JRadioButton();
+                                component = new JRadioButton(context.newAction(el));
                                 break;
                             case "range":
                                 component = new JSlider();
@@ -645,21 +581,21 @@ public class HtmlPanel extends JPanel {
                             default:
                                 continue;
                         }
-                        if (el.hasAttr("id")) {
-                            form().addInput(el, component);
-                        }
+                        //if (el.hasAttr("id")) {
+                        //    form().addInput(el, component);
+                        //}
                         if (el.hasAttr("name")) {
                             component.setName(el.attr("name"));
                         }
                         if (el.hasAttr("disabled")) {
                             component.setEnabled(false);
                         }
-                        paragraph.add(component);
+                        add(panel, component, el, attr.copy());
                         continue;
                     }
 
                     default:
-                        paragraph = renderContent(panel, el, f, fg, bg, paragraph);
+                        renderContent(panel, el, attr.copy());
                         break;
                 }
             } else if (n instanceof TextNode) {
@@ -670,41 +606,16 @@ public class HtmlPanel extends JPanel {
                 int prev = 0;
                 while (m.find()) {
                     if (prev != m.start()) {
-                        newTextLabel(s.substring(prev, m.start()), f, fg, bg, paragraph);
+                        add(panel, new JLabel(s.substring(prev, m.start())), t, attr);
                     }
-                    newTextLabel(" ", f, fg, bg, paragraph);
+                    add(panel, new JLabel(" "), t, attr);
                     prev = m.end();
                 }
                 if (prev != s.length()) {
-                    newTextLabel(s.substring(prev, s.length()), f, fg, bg, paragraph);
+                    add(panel, new JLabel(s.substring(prev, s.length())), t, attr);
                 }
             }
         }
-        return paragraph;
-    }
-
-    protected HtmlForm form() {
-        Container c = getParent();
-        while (c != null) {
-            if (c instanceof HtmlPanel) {
-                return ((HtmlPanel) c).form();
-            }
-            c = c.getParent();
-        }
-        return null;
-    }
-
-    private JLabel newTextLabel(String text, Font f, Color fg, Color bg, JPanel paragraph) {
-        JLabel label = new JLabel(text);
-        label.setFont(f);
-        label.setForeground(fg);
-        if (bg != null) {
-            label.setBackground(bg);
-        }
-        paragraph.add(label);
-        context.applyStyle(body, label);
-        label.setBorder(BorderFactory.createEmptyBorder());
-        return label;
     }
 
     private static Element[] elementsByTag(Element body, String tag) {
@@ -744,5 +655,55 @@ public class HtmlPanel extends JPanel {
     @Override
     public Dimension getMinimumSize() {
         return adjustSize(super.getMinimumSize(), Math::max);
+    }
+
+    static class Attr implements Cloneable {
+        Font font;
+        Color fgColor;
+        Color bgColor;
+
+        Attr() {
+        }
+
+        Attr(Font f, Color fg, Color bg) {
+            font = f;
+            fgColor = fg;
+            bgColor = bg;
+        }
+
+        Attr copy() {
+            try {
+                return (Attr) clone();
+            } catch (CloneNotSupportedException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        Attr deriveFont(Map<? extends AttributedCharacterIterator.Attribute, ?> attributes) {
+            return new Attr(
+                    font.deriveFont(attributes),
+                    fgColor,
+                    bgColor
+            );
+        }
+        Attr deriveFontDelta(float delta) {
+            return new Attr(
+                    font.deriveFont(font.getSize2D() + delta),
+                    fgColor,
+                    bgColor
+            );
+        }
+
+        void apply(Component comp) {
+            if (font != null) {
+                comp.setFont(font);
+            }
+            if (fgColor != null) {
+                comp.setForeground(fgColor);
+            }
+            if (bgColor != null) {
+                comp.setBackground(bgColor);
+            }
+        }
     }
 }

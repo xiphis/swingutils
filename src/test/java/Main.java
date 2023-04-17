@@ -22,7 +22,7 @@ public class Main {
                         "<head><title>Hello World</title>" +
                         "<link rel=\"stylesheet\" src=\"/org/xiphis/swing/default-style-sheet.css\">" +
                         "</head><body width='320' height='240'>" +
-                        "<p>Foo bar!<br>This <mark>is</mark> a <b>simple test</b>... <!--table>\n" +
+                        "<p>Foo bar!<br>This <mark>is</mark> a <b>simple test</b>... <table>\n" +
                         "  <tr>\n" +
                         "    <th>Month</th>\n" +
                         "    <th>Savings</th>\n" +
@@ -31,7 +31,7 @@ public class Main {
                         "    <td>January</td>\n" +
                         "    <td>$100</td>\n" +
                         "  </tr>\n" +
-                        "</table--><h1>Moaring <code>codeing</code></h1>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. testing <button type='button'>foo!</button><hr><input type='submit'>" +
+                        "</table><h1>Moaring <code>codeing</code></h1>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. <P>testing <button type='button'>foo!</button><hr><input type='submit'>" +
                         "</body></html>", true);
 
 

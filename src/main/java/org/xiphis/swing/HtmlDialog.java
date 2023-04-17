@@ -17,7 +17,9 @@ public class HtmlDialog extends JDialog {
     public HtmlDialog(Frame owner, HtmlContext context, boolean modal) {
         super(owner, context.document().title(), modal);
 
-        HtmlPanel panel = new HtmlPanel(context, context.document().body(), BorderFactory.createEmptyBorder());
+        ((JPanel) getContentPane()).setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+
+        HtmlPanel panel = new HtmlPanel(context, context.document().body());
         getContentPane().add(panel, BorderLayout.CENTER);
 
         //setResizable(context.document().body().hasAttr("resizable"));

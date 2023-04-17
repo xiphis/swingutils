@@ -6,6 +6,7 @@ import com.steadystate.css.parser.SACParserCSS3;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import org.jsoup.nodes.Node;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.css.sac.CSSException;
@@ -18,6 +19,7 @@ import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.border.EtchedBorder;
 import java.awt.*;
+import java.awt.event.ActionEvent;
 import java.awt.font.TextAttribute;
 import java.io.*;
 import java.net.URL;
@@ -120,20 +122,6 @@ public class HtmlContext {
     public Document document() {
         return document;
     }
-    public boolean reset(HtmlForm htmlForm, HtmlForm.SubmitAction action) {
-        log.info("reset: {}", action);
-        return false;
-    }
-    public boolean button(HtmlForm htmlForm, HtmlForm.SubmitAction action) {
-        log.info("button: {}", action);
-        return false;
-    }
-
-    public boolean submit(HtmlForm htmlForm, HtmlForm.SubmitAction action) {
-        log.info("submit: {}", action);
-        return false;
-    }
-
     private static final Pattern WHITESPACE = Pattern.compile("\\s+");
 
     private boolean checkAttribute(Element el, String attribute) {
@@ -277,7 +265,11 @@ public class HtmlContext {
         return true;
     }
 
-    public void applyStyle(Element el, JComponent component) {
+    public void applyStyle(JComponent component, Node n) {
+        while (!(n instanceof Element)) {
+            n = n.parentNode();
+        }
+        Element el = (Element) n;
         CSSRuleList cssRules = stylesheet().getCssRules();
         List<CSSStyleDeclaration> styleDeclarations = null;
         for (int i = 0; i < cssRules.getLength(); i++) {
@@ -306,13 +298,17 @@ public class HtmlContext {
             }
         }
 
+        if (styleDeclarations == null) {
+            return;
+        }
+
         for (CSSStyleDeclaration style : styleDeclarations) {
             for (int i = 0; i < style.getLength(); i++) {
                 String property = style.item(i);
                 switch (property) {
                     case "margin":
                         if (component instanceof HtmlPanel) {
-                            log.info("margin: {}", style.getPropertyValue(property));
+                            log.debug("margin: {}", style.getPropertyValue(property));
                         }
                         continue;
                     case "padding":
@@ -330,6 +326,17 @@ public class HtmlContext {
                     case "outline":
                         log.debug("not supported: {}", property);
                         continue;
+                    case "line-height":
+                        log.debug("not supported: {}", property);
+                        continue;
+                    case "vertical-align":
+                        switch (style.getPropertyValue(property)) {
+                            case "baseline":
+                                continue;
+                            default:
+                                log.debug("vertical-align mot supported: {} {} {}", el.tagName(), component.getClass().getSimpleName(), style.getPropertyValue(property));
+                                continue;
+                        }
                     case "background":
                         Optional.ofNullable(HtmlColor.getColor(style.getPropertyValue(property)))
                                 .ifPresent(component::setBackground);
@@ -480,4 +487,20 @@ public class HtmlContext {
         return border;
     }
 
+    public Action newAction(Element el) {
+        String text = el.text();
+        String wholeText = el.wholeText();
+        if (!text.equals(wholeText.trim())) {
+            text = "<html>" + wholeText;
+        }
+        return newAction(el, text);
+    }
+    public Action newAction(Element el, String name) {
+        return new HtmlAction(this, el, name);
+    }
+
+
+    public void actionPerformed(HtmlAction htmlAction, ActionEvent e) {
+        log.info("actionPerformed({}, {})", htmlAction, e);
+    }
 }
