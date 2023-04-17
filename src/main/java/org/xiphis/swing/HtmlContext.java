@@ -26,6 +26,8 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.List;
+import java.util.function.Consumer;
+import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
 public class HtmlContext {
@@ -545,17 +547,25 @@ public class HtmlContext {
         log.info("actionPerformed({}, {})", htmlAction, e);
         switch (htmlAction.element().tagName()) {
             case "a":
+                clickAction(htmlAction, e);
                 break;
             case "button":
                 switch (htmlAction.element().attr("type")) {
                     case "submit":
+                        submitAction(htmlAction, e);
+                        break;
                     case "reset":
+                        resetAction(htmlAction, e);
+                        break;
                     default:
+                        clickAction(htmlAction, e);
+                        break;
                 }
-                break;
             case "input":
                 switch (htmlAction.element().attr("type")) {
                     case "submit":
+                        submitAction(htmlAction, e);
+                        break;
                     case "checkbox":
                     case "radio":
                         break;
@@ -563,15 +573,51 @@ public class HtmlContext {
         }
     }
 
-    public void onSubmit() {
-
+    private void submitAction(HtmlAction action, EventObject event) {
+        HtmlEvent htmlEvent = new HtmlEvent(action, event);
+        if (submit.test(htmlEvent)) {
+            htmlEvent.window().setVisible(false);
+        }
     }
 
-    public void onClicked() {
-
+    private void resetAction(HtmlAction action, EventObject event) {
+        HtmlEvent htmlEvent = new HtmlEvent(action, event);
+        if (reset.test(htmlEvent)) {
+            // clear all data to defaults?
+        }
     }
 
-    public void onReset() {
+    private void clickAction(HtmlAction action, EventObject event) {
+        HtmlEvent htmlEvent = new HtmlEvent(action, event);
+        if (click.test(htmlEvent)) {
+            log.debug("clicked");
+        } else {
+            log.warn("unhandled click: {} {}", action, event);
+        }
+    }
 
+    private Predicate<HtmlEvent> submit = ignore -> true;
+    private Predicate<HtmlEvent> reset = ignore -> true;
+    private Predicate<HtmlEvent> click = ignore -> false;
+
+    public void onSubmit(Predicate<HtmlEvent> submitAction) {
+        submit = submit.and(submitAction);
+    }
+
+    public void onClicked(String id, Consumer<HtmlEvent> clickAction) {
+        Objects.requireNonNull(id);
+        Objects.requireNonNull(clickAction);
+        click = click.or(htmlEvent -> {
+            if (id.equals(htmlEvent.getId())) {
+                clickAction.accept(htmlEvent);
+                return true;
+            } else {
+                return false;
+            }
+        });
+    }
+
+    public void onReset(Predicate<HtmlEvent> resetAction) {
+        reset = reset.and(resetAction);
     }
 }

@@ -2,6 +2,8 @@ package org.xiphis.swing;
 
 import javax.swing.*;
 import java.awt.*;
+import java.util.function.Consumer;
+import java.util.function.Predicate;
 
 public class HtmlDialog extends JDialog {
 
@@ -25,18 +27,18 @@ public class HtmlDialog extends JDialog {
         pack();
     }
 
-    public HtmlDialog onSubmit() {
-        panel.onSubmit();
+    public HtmlDialog onSubmit(Predicate<HtmlEvent> handler) {
+        panel.onSubmit(handler);
         return this;
     }
 
-    public HtmlDialog onClicked() {
-        panel.onClicked();
+    public HtmlDialog onClicked(String id, Consumer<HtmlEvent> handler) {
+        panel.onClicked(id, handler);
         return this;
     }
 
-    public HtmlDialog onReset() {
-        panel.onReset();
+    public HtmlDialog onReset(Predicate<HtmlEvent> handler) {
+        panel.onReset(handler);
         return this;
     }
 }

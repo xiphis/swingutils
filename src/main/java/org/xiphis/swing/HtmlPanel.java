@@ -19,6 +19,7 @@ import java.text.AttributedCharacterIterator;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Vector;
+import java.util.function.Consumer;
 import java.util.function.IntBinaryOperator;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
@@ -668,18 +669,18 @@ public class HtmlPanel extends JPanel {
         return adjustSize(super.getMinimumSize(), Math::max);
     }
 
-    public HtmlPanel onSubmit() {
-        context().onSubmit();
+    public HtmlPanel onSubmit(Predicate<HtmlEvent> handler) {
+        context().onSubmit(handler);
         return this;
     }
 
-    public HtmlPanel onClicked() {
-        context().onSubmit();
+    public HtmlPanel onClicked(String id, Consumer<HtmlEvent> handler) {
+        context().onClicked(id, handler);
         return this;
     }
 
-    public HtmlPanel onReset() {
-        context().onSubmit();
+    public HtmlPanel onReset(Predicate<HtmlEvent> handler) {
+        context().onReset(handler);
         return this;
     }
 

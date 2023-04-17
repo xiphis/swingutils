@@ -381,10 +381,6 @@ public final class HtmlLayout implements LayoutManager2 {
         int[] ySpans = new int[totYSize];
         SizeRequirements.calculateTiledPositions(size.height, layout.height, layout.totY.toArray(new SizeRequirements[0]), yOffsets, ySpans);
 
-        //int[] xOffsets = new int[totYSize];
-        //int[] xSpans = new int[totYSize];
-        //SizeRequirements.calculateAlignedPositions(size.width, layout.width, layout.totX.toArray(new SizeRequirements[0]), xOffsets, xSpans);
-
         Iterator<Layout.Row> rIt = layout.rows.iterator();
         Iterator<SizeRequirements> totY = layout.totY.iterator();
         Iterator<SizeRequirements> totX = layout.totX.iterator();
