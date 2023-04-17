@@ -57,15 +57,8 @@ public class HtmlContext {
                     url = ClassLoader.getSystemResource(src);
                 }
                 if (url != null) {
-                    try (InputStream is = url.openStream();
-                         BufferedReader reader = new BufferedReader(new InputStreamReader(is,StandardCharsets.UTF_8))) {
-                        for (;;) {
-                            String line = reader.readLine();
-                            if (line == null) {
-                                break;
-                            }
-                            sb.append(line).append('\n');
-                        }
+                    try {
+                        appendStyleSheet(url, sb);
                     } catch (Exception ex) {
                         log.warn("Failed trying to read from: {}", link.html(), ex);
                     }
@@ -103,6 +96,19 @@ public class HtmlContext {
             parser.setParentStyleSheet((CSSStyleSheetImpl) sheet);
         } catch (Exception e) {
             log.warn("Failed to parse style sheet", e);
+        }
+    }
+
+    private void appendStyleSheet(URL url, StringBuilder sb) throws IOException {
+        try (InputStream is = url.openStream();
+             BufferedReader reader = new BufferedReader(new InputStreamReader(is,StandardCharsets.UTF_8))) {
+            for (;;) {
+                String line = reader.readLine();
+                if (line == null) {
+                    break;
+                }
+                sb.append(line).append('\n');
+            }
         }
     }
 
@@ -297,6 +303,21 @@ public class HtmlContext {
                 styleDeclarations.add(declaration);
             }
         }
+        if (el.hasAttr("align")) {
+            switch (el.attr("align")) {
+                case "left":
+                case "right":
+                case "center":
+                    CSSStyleDeclaration declaration = style("float:" + el.attr("align"));
+                    if (styleDeclarations == null) {
+                        styleDeclarations = Collections.singletonList(declaration);
+                    } else {
+                        styleDeclarations.add(declaration);
+                    }
+                default:
+            }
+
+        }
 
         if (styleDeclarations == null) {
             return;
@@ -306,6 +327,21 @@ public class HtmlContext {
             for (int i = 0; i < style.getLength(); i++) {
                 String property = style.item(i);
                 switch (property) {
+                    case "float":
+                        switch (style.getPropertyValue(property)) {
+                            case "left":
+                                component.setAlignmentX(JComponent.LEFT_ALIGNMENT);
+                                continue;
+                            case "center":
+                                component.setAlignmentX(JComponent.CENTER_ALIGNMENT);
+                                continue;
+                            case "right":
+                                component.setAlignmentX(JComponent.RIGHT_ALIGNMENT);
+                                continue;
+                            default:
+                                log.info("unknown alignment: {} {} {}", el.tagName(), component.getClass().getSimpleName(), style.getPropertyValue(property));
+                                continue;
+                        }
                     case "margin":
                         if (component instanceof HtmlPanel) {
                             log.debug("margin: {}", style.getPropertyValue(property));
@@ -338,6 +374,12 @@ public class HtmlContext {
                                 continue;
                         }
                     case "background":
+                        if ("transparent".equals(style.getPropertyValue(property))) {
+                            continue;
+                        }
+                        log.info("unhandled background: {} {} {}", el.tagName(), component.getClass().getSimpleName(), style.getPropertyValue(property));
+                        continue;
+                    case "background-color":
                         Optional.ofNullable(HtmlColor.getColor(style.getPropertyValue(property)))
                                 .ifPresent(component::setBackground);
                         continue;

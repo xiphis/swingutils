@@ -26,7 +26,18 @@ public final class HtmlColor {
             end--;
         }
 
-        if (nm.startsWith("#")) {
+        if (nm.startsWith("rgb(")) {
+            end = nm.indexOf(')');
+            if (end > 0) {
+                String rgbString = nm.substring(4, end);
+                String[] rgb = rgbString.split("\\s*,\\s*");
+                if (rgb.length != 3) {
+                    LOG.warn("bad rgb: {} .. {}", nm, rgbString);
+                } else {
+                    c = new Color(Integer.parseUnsignedInt(rgb[0]), Integer.parseUnsignedInt(rgb[1]), Integer.parseUnsignedInt(rgb[2]));
+                }
+            }
+        } else if (nm.startsWith("#")) {
             start++;
             if (end - start == 3) {
                 int cs = Integer.parseUnsignedInt(nm, start, end, 16);

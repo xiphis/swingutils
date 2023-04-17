@@ -18,6 +18,9 @@ public class HtmlAction extends AbstractAction {
         if (element.hasAttr("alt")) {
             putValue(Action.SHORT_DESCRIPTION, element.attr("alt"));
         }
+        if (element.hasAttr("disabled")) {
+            setEnabled(false);
+        }
     }
 
     public Element element() {

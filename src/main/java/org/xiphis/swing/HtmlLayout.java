@@ -1,6 +1,5 @@
 package org.xiphis.swing;
 
-import org.jsoup.nodes.Comment;
 import org.jsoup.nodes.Element;
 import org.jsoup.nodes.Node;
 import org.slf4j.Logger;
@@ -72,7 +71,7 @@ public final class HtmlLayout implements LayoutManager2 {
      */
     @Override
     public float getLayoutAlignmentX(Container target) {
-        return 0.5f;
+        return 0f;
     }
 
     /**
@@ -87,7 +86,7 @@ public final class HtmlLayout implements LayoutManager2 {
      */
     @Override
     public float getLayoutAlignmentY(Container target) {
-        return 0.5f;
+        return 0f;
     }
 
     /**
@@ -144,6 +143,12 @@ public final class HtmlLayout implements LayoutManager2 {
             totX.add(SizeRequirements.getTiledSizeRequirements(row.rowX.toArray(new SizeRequirements[0])));
             totY.add(SizeRequirements.getAlignedSizeRequirements(row.rowY.toArray(new SizeRequirements[0])));
             rows.add(row);
+        }
+
+        Layout done() {
+            width = SizeRequirements.getAlignedSizeRequirements(totX.toArray(new SizeRequirements[0]));
+            height = SizeRequirements.getTiledSizeRequirements(totY.toArray(new SizeRequirements[0]));
+            return this;
         }
 
     }
@@ -295,10 +300,7 @@ public final class HtmlLayout implements LayoutManager2 {
             layout.add(row);
         }
 
-        layout.width = SizeRequirements.getAlignedSizeRequirements(layout.totX.toArray(new SizeRequirements[0]));
-        layout.height = SizeRequirements.getTiledSizeRequirements(layout.totY.toArray(new SizeRequirements[0]));
-
-        return layout;
+        return layout.done();
     }
 
     /**
@@ -311,8 +313,12 @@ public final class HtmlLayout implements LayoutManager2 {
      */
     @Override
     public Dimension preferredLayoutSize(Container parent) {
+        Dimension min = minDimension(parent);
         Layout layout = computeLayoutSize(parent, foo(parent));
-        return new Dimension(layout.width.preferred, layout.height.preferred);
+        Insets insets = parent.getInsets();
+        return new Dimension(
+                Math.max(min.width, layout.width.preferred + insets.left + insets.right),
+                Math.max(min.height, layout.height.preferred + insets.top + insets.bottom));
     }
 
     /**
@@ -325,8 +331,26 @@ public final class HtmlLayout implements LayoutManager2 {
      */
     @Override
     public Dimension minimumLayoutSize(Container parent) {
+        Dimension min = minDimension(parent);
         Layout layout = computeLayoutSize(parent, foo(parent));
-        return new Dimension(layout.width.minimum, layout.height.minimum);
+        Insets insets = parent.getInsets();
+        return new Dimension(
+                Math.max(min.width, layout.width.minimum + insets.left + insets.right),
+                Math.max(min.height, layout.height.minimum + insets.top + insets.bottom));
+    }
+
+    private Dimension minDimension(Container parent) {
+        Dimension dim = new Dimension();
+        if (parent instanceof HtmlPanel) {
+            Element body = ((HtmlPanel) parent).body();
+            if (body.hasAttr("width")) {
+                dim.width = Integer.parseUnsignedInt(body.attr("width"));
+            }
+            if (body.hasAttr("height")) {
+                dim.height = Integer.parseUnsignedInt(body.attr("height"));
+            }
+        }
+        return dim;
     }
 
     private Dimension foo(Container parent) {
@@ -341,29 +365,55 @@ public final class HtmlLayout implements LayoutManager2 {
      */
     @Override
     public void layoutContainer(Container parent) {
-        Layout layout = computeLayoutSize(parent, parent.getSize());
+        Insets insets = parent.getInsets();
+        Dimension size = parent.getSize();
+        size.height -= insets.top + insets.bottom;
+        size.width -= insets.left + insets.right;
 
-        int[] yOffsets = new int[layout.totY.size()];
-        int[] ySpans = new int[layout.totY.size()];
-        SizeRequirements.calculateTiledPositions(parent.getHeight(), layout.height, layout.totY.toArray(new SizeRequirements[0]), yOffsets, ySpans);
+        Layout layout = computeLayoutSize(parent, size);
+
+        int totYSize = layout.totY.size();
+        int[] yOffsets = new int[totYSize];
+        int[] ySpans = new int[totYSize];
+        SizeRequirements.calculateTiledPositions(size.height, layout.height, layout.totY.toArray(new SizeRequirements[0]), yOffsets, ySpans);
+
+        //int[] xOffsets = new int[totYSize];
+        //int[] xSpans = new int[totYSize];
+        //SizeRequirements.calculateAlignedPositions(size.width, layout.width, layout.totX.toArray(new SizeRequirements[0]), xOffsets, xSpans);
 
         Iterator<Layout.Row> rIt = layout.rows.iterator();
+        Iterator<SizeRequirements> totY = layout.totY.iterator();
+        Iterator<SizeRequirements> totX = layout.totX.iterator();
         for (int r = 0; rIt.hasNext(); r++) {
             Layout.Row row = rIt.next();
-            int[] compyOffsets = new int[row.comp.size()];
-            int[] compySpans = new int[row.comp.size()];
-            SizeRequirements.calculateAlignedPositions(ySpans[r], layout.totY.get(r), row.rowY.toArray(new SizeRequirements[0]), compyOffsets, compySpans);
+            int compSize = row.comp.size();
+            int[] compyOffsets = new int[compSize];
+            int[] compySpans = new int[compSize];
+            SizeRequirements.calculateAlignedPositions(ySpans[r], totY.next(), row.rowY.toArray(new SizeRequirements[0]), compyOffsets, compySpans);
 
-            int[] compxOffsets = new int[row.comp.size()];
-            int[] compxSpans = new int[row.comp.size()];
-            SizeRequirements.calculateTiledPositions(parent.getWidth(), layout.totX.get(r), row.rowX.toArray(new SizeRequirements[0]), compxOffsets, compxSpans);
+            int[] compxOffsets = new int[compSize];
+            int[] compxSpans = new int[compSize];
+            calculateTiledPositions(size.width, totX.next(), row.rowX.toArray(new SizeRequirements[0]), compxOffsets, compxSpans);
 
             Iterator<Component> cIt = row.comp.iterator();
             for (int i = 0; cIt.hasNext(); i++) {
                 Component comp = cIt.next();
-                comp.setBounds(compxOffsets[i], compyOffsets[i] + yOffsets[r], compxSpans[i], compySpans[i]);
+                comp.setBounds(compxOffsets[i] + insets.left, compyOffsets[i] + yOffsets[r] + insets.top, compxSpans[i], compySpans[i]);
                 comp.doLayout();
             }
+        }
+    }
+
+    private void calculateTiledPositions(int allocated, SizeRequirements total, SizeRequirements[] children, int[] offsets, int[] spans) {
+        int[] roffsets = new int[offsets.length];
+        SizeRequirements.calculateTiledPositions(allocated, total, children, roffsets, spans, false);
+        SizeRequirements.calculateTiledPositions(allocated, total, children, offsets, spans);
+
+        // TODO: fix stupid solution with something that would work better later
+        for (int i = 0; i < children.length; i++) {
+            float alignment = children[i].alignment;
+            int offset = (int) ((alignment * roffsets[i]) + ((1f - alignment) * offsets[i]));
+            offsets[i] = offset;
         }
     }
 }

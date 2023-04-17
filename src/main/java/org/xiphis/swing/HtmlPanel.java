@@ -9,10 +9,8 @@ import org.slf4j.LoggerFactory;
 import javax.swing.*;
 import javax.swing.border.Border;
 import java.awt.*;
-import java.awt.font.TextAttribute;
 import java.net.URL;
 import java.text.AttributedCharacterIterator;
-import java.util.Collections;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Vector;
@@ -21,17 +19,10 @@ import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static org.xiphis.swing.HtmlStyle.*;
+
 public class HtmlPanel extends JPanel {
     private static final Pattern WHITESPACE = Pattern.compile("\\s+");
-
-    private static final Map<TextAttribute, String> TEXT_ATTRIBUTE_MONOSPACE = Collections.singletonMap(TextAttribute.FAMILY, "Monospaced");
-    private static final Map<TextAttribute, Float> TEXT_ATTRIBUTE_WEIGHT_BOLD = Collections.singletonMap(TextAttribute.WEIGHT, TextAttribute.WEIGHT_BOLD);
-    private static final Map<TextAttribute, Float> TEXT_ATTRIBUTE_WEIGHT_EXTRABOLD = Collections.singletonMap(TextAttribute.WEIGHT, TextAttribute.WEIGHT_EXTRABOLD);
-    private static final Map<TextAttribute, Float> TEXT_ATTRIBUTE_POSTURE_OBLIQUE = Collections.singletonMap(TextAttribute.POSTURE, TextAttribute.POSTURE_OBLIQUE);
-    private static final Map<TextAttribute, Integer> TEXT_ATTRIBUTE_SUPERSCRIPT_SUB = Collections.singletonMap(TextAttribute.SUPERSCRIPT, TextAttribute.SUPERSCRIPT_SUB);
-    private static final Map<TextAttribute, Integer> TEXT_ATTRIBUTE_SUPERSCRIPT_SUPER = Collections.singletonMap(TextAttribute.SUPERSCRIPT, TextAttribute.SUPERSCRIPT_SUPER);
-    private static final Map<TextAttribute, Boolean> TEXT_ATTRIBUTE_STRIKETHROUGH_ON = Collections.singletonMap(TextAttribute.STRIKETHROUGH, TextAttribute.STRIKETHROUGH_ON);
-    private static final Map<TextAttribute, Integer> TEXT_ATTRIBUTE_UNDERLINE_ON = Collections.singletonMap(TextAttribute.UNDERLINE, TextAttribute.UNDERLINE_ON);
 
 
     private final Logger log = LoggerFactory.getLogger(getClass());
@@ -165,6 +156,10 @@ public class HtmlPanel extends JPanel {
         if (border != null) {
             setBorder(border);
         }
+    }
+
+    Element body() {
+        return body;
     }
 
     private void renderArticles() {
@@ -336,6 +331,9 @@ public class HtmlPanel extends JPanel {
                      Node n, Attr attr) {
         if (attr != null) {
             attr.apply(comp);
+        }
+        if (n instanceof Element) {
+
         }
         panel.add(comp, constraint);
         context.applyStyle(comp, n);
