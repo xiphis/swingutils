@@ -38,6 +38,7 @@ public class HtmlPanel extends JPanel {
 
     public HtmlPanel(String html) {
         this(new HtmlContext(html, true));
+        context.init();
     }
     private HtmlPanel(HtmlContext context) {
         this(context, context.document());
@@ -533,7 +534,7 @@ public class HtmlPanel extends JPanel {
                             case "button":
                             case "reset":
                             case "submit":
-                                button = new JButton(context.newAction(el));
+                                button = new JButton(context.newButtonAction(el));
                                 break;
                             default:
                                 continue;
@@ -544,12 +545,13 @@ public class HtmlPanel extends JPanel {
                         JComponent component;
                         switch (el.attr("type")) {
                             case "submit": {
-                                component = new JButton(context.newAction(el, el.hasAttr("value") ? el.attr("value") : "Submit"));
+                                component = new JButton(context.newButtonAction(el));
                                 break;
                             }
-                            case "checkbox":
-                                component = new JCheckBox(context.newAction(el));
+                            case "checkbox": {
+                                component = new JCheckBox(context.newCheckboxAction(el));
                                 break;
+                            }
                             case "color":
                                 component = new JColorChooser();
                                 break;
@@ -559,7 +561,7 @@ public class HtmlPanel extends JPanel {
                                 component = new JPasswordField();
                                 break;
                             case "radio":
-                                component = new JRadioButton(context.newAction(el));
+                                component = new JRadioButton(context.newRadioboxAction(el));
                                 break;
                             case "range":
                                 component = new JSlider();

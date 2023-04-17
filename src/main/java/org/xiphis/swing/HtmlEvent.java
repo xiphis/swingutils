@@ -1,5 +1,6 @@
 package org.xiphis.swing;
 
+import com.google.gson.JsonObject;
 import org.jsoup.nodes.Element;
 
 import javax.swing.*;
@@ -16,8 +17,8 @@ public class HtmlEvent {
     public HtmlEvent(HtmlAction action, EventObject event) {
         this.action = action;
         this.event = event;
-        this.element = action.element();
-        this.id = action.element().attr("id");
+        this.element = action.element((Component) event.getSource());
+        this.id = element.attr("id");
         if (event.getSource() instanceof Component) {
             Component c = (Component) event.getSource();
             for (;;) {
@@ -42,6 +43,17 @@ public class HtmlEvent {
 
     public Action getAction() {
         return action;
+    }
+
+    public JsonObject getState() {
+        if (action instanceof HtmlAction) {
+            return ((HtmlAction) action).context().toJson();
+        }
+        return null;
+    }
+
+    public void setState(JsonObject state) {
+        ((HtmlAction) action).context().setValues(state);
     }
 
     public String getId() {

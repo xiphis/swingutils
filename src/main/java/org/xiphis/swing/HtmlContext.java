@@ -1,5 +1,7 @@
 package org.xiphis.swing;
 
+import com.google.gson.JsonObject;
+import com.google.gson.JsonPrimitive;
 import com.steadystate.css.dom.CSSStyleSheetImpl;
 import com.steadystate.css.parser.CSSOMParser;
 import com.steadystate.css.parser.SACParserCSS3;
@@ -35,6 +37,15 @@ public class HtmlContext {
     private final Document document;
     private final CSSOMParser parser;
     private CSSStyleSheet sheet;
+
+    private final Map<String, Object> nameMap = new HashMap<>();
+    private final Map<String, Component> idMap = new HashMap<>();
+    private final Map<JLabel, String> labelFor = new IdentityHashMap<>();
+
+    private Predicate<HtmlEvent> submit = ignore -> true;
+    private Predicate<HtmlEvent> reset = ignore -> true;
+    private Predicate<HtmlEvent> click = ignore -> false;
+
 
     public HtmlContext(String html) {
         this(html, false);
@@ -274,6 +285,14 @@ public class HtmlContext {
     }
 
     public void applyStyle(JComponent component, Node n) {
+        if (n instanceof Element) {
+            if (n.hasAttr("id")) {
+                idMap.putIfAbsent(n.attr("id"), component);
+            }
+            if (component instanceof JLabel && n.hasAttr("for")) {
+                labelFor.put((JLabel) component, n.attr("for"));
+            }
+        }
         while (!(n instanceof Element)) {
             n = n.parentNode();
         }
@@ -531,26 +550,40 @@ public class HtmlContext {
         return border;
     }
 
-    public Action newAction(Element el) {
-        String text = el.text();
-        String wholeText = el.wholeText();
-        if (!text.equals(wholeText.trim())) {
-            text = "<html>" + wholeText;
-        }
-        return newAction(el, text);
+    public HtmlAction.Button newButtonAction(Element el) {
+        return new HtmlAction.Button(el, newAction(el));
     }
-    public Action newAction(Element el, String name) {
-        return new HtmlAction(this, el, name);
+
+    public HtmlAction.Checkbox newCheckboxAction(Element el) {
+        return new HtmlAction.Checkbox(el, newAction(el));
+    }
+
+    public HtmlAction.Radiobox newRadioboxAction(Element el) {
+        return new HtmlAction.Radiobox(el, newAction(el));
+    }
+
+    public HtmlAction newAction(Element el) {
+        if (el.hasAttr("name")) {
+
+            return (HtmlAction) nameMap.computeIfAbsent(el.attr("name"), name -> {
+                log.debug("Created action for {}", name);
+                return new HtmlAction(this, name);
+            });
+        }
+        log.warn("No name for element: {}", el);
+        return new HtmlAction(this, "");
     }
 
     public void actionPerformed(HtmlAction htmlAction, ActionEvent e) {
+        Component comp = (Component) e.getSource();
+        Element element = htmlAction.element(comp);
         log.info("actionPerformed({}, {})", htmlAction, e);
-        switch (htmlAction.element().tagName()) {
+        switch (element.tagName()) {
             case "a":
                 clickAction(htmlAction, e);
                 break;
             case "button":
-                switch (htmlAction.element().attr("type")) {
+                switch (element.attr("type")) {
                     case "submit":
                         submitAction(htmlAction, e);
                         break;
@@ -562,7 +595,7 @@ public class HtmlContext {
                         break;
                 }
             case "input":
-                switch (htmlAction.element().attr("type")) {
+                switch (element.attr("type")) {
                     case "submit":
                         submitAction(htmlAction, e);
                         break;
@@ -596,10 +629,6 @@ public class HtmlContext {
         }
     }
 
-    private Predicate<HtmlEvent> submit = ignore -> true;
-    private Predicate<HtmlEvent> reset = ignore -> true;
-    private Predicate<HtmlEvent> click = ignore -> false;
-
     public void onSubmit(Predicate<HtmlEvent> submitAction) {
         submit = submit.and(submitAction);
     }
@@ -619,5 +648,52 @@ public class HtmlContext {
 
     public void onReset(Predicate<HtmlEvent> resetAction) {
         reset = reset.and(resetAction);
+    }
+
+    public void init() {
+        labelFor.forEach((jLabel, id) -> {
+            Component c = getComponentById(id);
+            if (c != null) {
+                jLabel.setLabelFor(c);
+            }
+        });
+    }
+
+    public Component getComponentById(String id) {
+        return idMap.get(id);
+    }
+
+    public void setValues(JsonObject jsonObject) {
+        nameMap.forEach((name, val) -> {
+           if (val instanceof Action) {
+               Action action = (Action) val;
+               JsonPrimitive value = jsonObject.getAsJsonPrimitive(name);
+               if (value.isBoolean()) {
+                   action.putValue(Action.SELECTED_KEY, value.getAsBoolean());
+               } else if (value.isNumber()) {
+                   action.putValue(Action.SELECTED_KEY, value.getAsNumber());
+               } else if (value.isString()) {
+                   action.putValue(Action.SELECTED_KEY, value.getAsString());
+               }
+           }
+        });
+    }
+
+    public JsonObject toJson() {
+        JsonObject result = new JsonObject();
+        nameMap.forEach((name, val) -> {
+            if (val instanceof Action) {
+                Action action = (Action) val;
+                Object value = action.getValue(Action.SELECTED_KEY);
+                if (value instanceof Boolean) {
+                    result.addProperty(name, (Boolean) value);
+                } else if (value instanceof Number) {
+                    result.addProperty(name, (Number) value);
+                } else if (value instanceof String) {
+                    result.addProperty(name, (String) value);
+                }
+            }
+        });
+        return result;
     }
 }

@@ -11,6 +11,7 @@ public class HtmlDialog extends JDialog {
 
     public HtmlDialog(Frame owner, String html, boolean modal) {
         this(owner, new HtmlContext(html), modal);
+        panel.context().init();
     }
 
     public HtmlDialog(Frame owner, HtmlContext context, boolean modal) {
