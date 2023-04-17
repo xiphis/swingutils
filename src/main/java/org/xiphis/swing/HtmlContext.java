@@ -29,6 +29,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
@@ -57,18 +58,8 @@ public class HtmlContext {
 
         for (Element link : document.getElementsByTag("link")) {
             if ("stylesheet".equals(link.attr("rel"))) {
-                ClassLoader ccl = Thread.currentThread().getContextClassLoader();
-                URL url = null;
                 String src = link.attr("src");
-                if (ccl != null) {
-                    url = ccl.getResource(src);
-                }
-                if (url == null) {
-                    url = getClass().getResource(src);
-                }
-                if (url == null) {
-                    url = ClassLoader.getSystemResource(src);
-                }
+                URL url = forResource(src);
                 if (url != null) {
                     try {
                         appendStyleSheet(url, sb);
@@ -110,6 +101,21 @@ public class HtmlContext {
         } catch (Exception e) {
             log.warn("Failed to parse style sheet", e);
         }
+    }
+
+    URL forResource(String src) {
+        ClassLoader ccl = Thread.currentThread().getContextClassLoader();
+        URL url = null;
+        if (ccl != null) {
+            url = ccl.getResource(src);
+        }
+        if (url == null) {
+            url = getClass().getResource(src);
+        }
+        if (url == null) {
+            url = ClassLoader.getSystemResource(src);
+        }
+        return url;
     }
 
     private void appendStyleSheet(URL url, StringBuilder sb) throws IOException {
@@ -562,6 +568,17 @@ public class HtmlContext {
         return new HtmlAction.Radiobox(el, newAction(el));
     }
 
+    public HtmlAction.Textarea newTextAreaModel(Element el) {
+        return new HtmlAction.Textarea(el, newAction(el), text -> text);
+    }
+    public HtmlAction.Textarea newTextAreaModel(Element el, Function<String, Object> transform) {
+        return new HtmlAction.Textarea(el, newAction(el), Objects.requireNonNull(transform));
+    }
+
+    public HtmlAction.Progress newProgressModel(Element el) {
+        return new HtmlAction.Progress(el, newAction(el));
+    }
+
     public HtmlAction newAction(Element el) {
         if (el.hasAttr("name")) {
 
@@ -585,6 +602,7 @@ public class HtmlContext {
             case "button":
                 switch (element.attr("type")) {
                     case "submit":
+                    case "image":
                         submitAction(htmlAction, e);
                         break;
                     case "reset":

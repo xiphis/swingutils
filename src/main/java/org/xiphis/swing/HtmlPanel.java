@@ -12,10 +12,9 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
 import java.net.URL;
 import java.text.AttributedCharacterIterator;
+import java.text.NumberFormat;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Vector;
@@ -264,12 +263,7 @@ public class HtmlPanel extends JPanel {
                     c.gridx = x++;
                     c.gridy = y;
                     c.fill = GridBagConstraints.BOTH;
-                    if (d.hasAttr("colspan")) {
-                        c.gridwidth = Integer.parseUnsignedInt(d.attr("colspan"));
-                    }
-                    if (d.hasAttr("rowspan")) {
-                        c.gridheight = Integer.parseUnsignedInt(d.attr("rowspan"));
-                    }
+                    parseTableSpans(c, d);
                     add(this, new HtmlPanel(context, d, border), c, d, null);
                 }
             }
@@ -290,12 +284,7 @@ public class HtmlPanel extends JPanel {
                     c.gridx = x++;
                     c.gridy = y;
                     c.fill = GridBagConstraints.BOTH;
-                    if (d.hasAttr("colspan")) {
-                        c.gridwidth = Integer.parseUnsignedInt(d.attr("colspan"));
-                    }
-                    if (d.hasAttr("rowspan")) {
-                        c.gridheight = Integer.parseUnsignedInt(d.attr("rowspan"));
-                    }
+                    parseTableSpans(c, d);
                     add(this, new HtmlPanel(context, d, border), c, d, null);
                 }
                 y++;
@@ -317,16 +306,20 @@ public class HtmlPanel extends JPanel {
                     c.gridx = x++;
                     c.gridy = y;
                     c.fill = GridBagConstraints.BOTH;
-                    if (d.hasAttr("colspan")) {
-                        c.gridwidth = Integer.parseUnsignedInt(d.attr("colspan"));
-                    }
-                    if (d.hasAttr("rowspan")) {
-                        c.gridheight = Integer.parseUnsignedInt(d.attr("rowspan"));
-                    }
+                    parseTableSpans(c, d);
                     add(this, new HtmlPanel(context, d, border), c, d, null);
                 }
                 y++;
             }
+        }
+    }
+
+    private void parseTableSpans(GridBagConstraints c, Element d) {
+        if (d.hasAttr("colspan")) {
+            c.gridwidth = Integer.parseUnsignedInt(d.attr("colspan"));
+        }
+        if (d.hasAttr("rowspan")) {
+            c.gridheight = Integer.parseUnsignedInt(d.attr("rowspan"));
         }
     }
 
@@ -336,14 +329,26 @@ public class HtmlPanel extends JPanel {
 
     private void add(JPanel panel, JComponent comp, Object constraint,
                      Node n, Attr attr) {
+        add(panel, comp, constraint, n, attr, false);
+    }
+    private void add(JPanel panel, JComponent comp, Object constraint,
+                     Node n, Attr attr, boolean scrollbars) {
         if (attr != null) {
             attr.apply(comp);
         }
-        if (n instanceof Element) {
-
-        }
-        panel.add(comp, constraint);
+        panel.add(scrollbars ? new JScrollPane(comp) : comp, constraint);
         context.applyStyle(comp, n);
+        if (n instanceof Element) {
+            if (n.hasAttr("name")) {
+                comp.setName(n.attr("name"));
+            }
+            if (n.hasAttr("disabled")) {
+                comp.setEnabled(false);
+            }
+            // TODO handle other common types...
+            //if (n.hasAttr("width")) {
+            //}
+        }
         if (attr != null) {
             attr.font = comp.getFont();
             attr.fgColor = comp.getForeground();
@@ -401,12 +406,6 @@ public class HtmlPanel extends JPanel {
                                 action.actionPerformed(new ActionEvent(e.getSource(), e.getID(), "", e.getWhen(), e.getModifiersEx()));
                             }
                         });
-                        action.addPropertyChangeListener(new PropertyChangeListener() {
-                            @Override
-                            public void propertyChange(PropertyChangeEvent evt) {
-                                ///
-                            }
-                        });
                         add(panel, label, el, attr.copy());
                         continue;
                     }
@@ -447,11 +446,8 @@ public class HtmlPanel extends JPanel {
                     case "label": {
                         String content = el.wholeText();
                         String plain = el.text();
-                        JLabel label = new JLabel(plain.equals(content) ? plain : "<HTML>" + content);
+                        JLabel label = new JLabel(plain.equals(content.trim()) ? plain : "<HTML>" + content);
                         add(panel, label, el, attr.copy());
-                        //if (el.hasAttr("for")) {
-                        //    form().addLabel(el, label);
-                        //}
                         continue;
                     }
                     case "textarea": {
@@ -467,18 +463,8 @@ public class HtmlPanel extends JPanel {
                         } catch (Exception ex) {
                             log.warn("Unable to parse rows/cols for {}", el.html(), ex);
                         }
-                        JTextArea textArea = new JTextArea(null, el.text(), rows, cols);
-
-                        //if (el.hasAttr("id")) {
-                        //    form().addInput(el, textArea);
-                        //}
-                        if (el.hasAttr("name")) {
-                            textArea.setName(el.attr("name"));
-                        }
-                        if (el.hasAttr("disabled")) {
-                            textArea.setEnabled(false);
-                        }
-                        add(panel, textArea, el, attr.copy());
+                        JTextArea textArea = new JTextArea(context.newTextAreaModel(el), el.text(), rows, cols);
+                        add(panel, textArea, el, el, attr.copy(), rows != 0 && cols != 0);
                         continue;
                     }
                     case "select": {
@@ -492,39 +478,12 @@ public class HtmlPanel extends JPanel {
                             options.add(new ComboBoxOption(value, text));
                         }
                         JComboBox<ComboBoxOption> comboBox = new JComboBox<>(options);
-                        //if (el.hasAttr("id")) {
-                        //    form().addInput(el, comboBox);
-                        //}
-                        if (el.hasAttr("name")) {
-                            comboBox.setName(el.attr("name"));
-                        }
-                        if (el.hasAttr("disabled")) {
-                            comboBox.setEnabled(false);
-                        }
                         add(panel, comboBox, el, attr.copy());
                         continue;
                     }
                     case "meter":
                     case "progress": {
-                        JProgressBar progressBar = new JProgressBar();
-                        if (el.hasAttr("max")) {
-                            progressBar.setMaximum(Integer.parseInt(el.attr("max")));
-                        }
-                        if (el.hasAttr("min")) {
-                            progressBar.setMinimum(Integer.parseInt(el.attr("min")));
-                        }
-                        if (el.hasAttr("value")) {
-                            progressBar.setValue(Integer.parseInt(el.attr("value")));
-                        }
-                        //if (el.hasAttr("id")) {
-                        //    form().addInput(el, progressBar);
-                        //}
-                        if (el.hasAttr("name")) {
-                            progressBar.setName(el.attr("name"));
-                        }
-                        if (el.hasAttr("disabled")) {
-                            progressBar.setEnabled(false);
-                        }
+                        JProgressBar progressBar = new JProgressBar(context.newProgressModel(el));
                         add(panel, progressBar, el, attr.copy());
                         continue;
                     }
@@ -548,6 +507,12 @@ public class HtmlPanel extends JPanel {
                                 component = new JButton(context.newButtonAction(el));
                                 break;
                             }
+                            case "image": {
+                                component = new JButton(context.newButtonAction(el));
+                                component.setBorder(BorderFactory.createEmptyBorder());
+                                ((JButton) component).setContentAreaFilled(false);
+                                break;
+                            }
                             case "checkbox": {
                                 component = new JCheckBox(context.newCheckboxAction(el));
                                 break;
@@ -555,30 +520,34 @@ public class HtmlPanel extends JPanel {
                             case "color":
                                 component = new JColorChooser();
                                 break;
-                            case "number":
-                                continue;
-                            case "password":
-                                component = new JPasswordField();
+                            case "password": {
+                                int cols = 0;
+                                try {
+                                    if (el.hasAttr("cols")) {
+                                        cols = Integer.parseUnsignedInt(el.attr("cols"));
+                                    }
+                                } catch (Exception ex) {
+                                    log.warn("Unable to parse rows/cols for {}", el.html(), ex);
+                                }
+                                component = new JPasswordField(context.newTextAreaModel(el), el.text(), cols);
                                 break;
+                            }
                             case "radio":
                                 component = new JRadioButton(context.newRadioboxAction(el));
                                 break;
                             case "range":
-                                component = new JSlider();
-                                if (el.hasAttr("min")) {
-                                    ((JSlider) component).setMinimum(Integer.parseInt(el.attr("min")));
-                                }
-                                if (el.hasAttr("max")) {
-                                    ((JSlider) component).setMaximum(Integer.parseInt(el.attr("max")));
-                                }
+                                component = new JSlider(context.newProgressModel(el));
                                 if (el.hasAttr("step")) {
                                     ((JSlider) component).setMinorTickSpacing(Integer.parseInt(el.attr("max")));
                                     ((JSlider) component).setSnapToTicks(true);
                                 }
-                                if (el.hasAttr("value")) {
-                                    ((JSlider) component).setValue(Integer.parseInt(el.attr("value")));
-                                }
                                 break;
+                            case "number": {
+                                JFormattedTextField formattedTextField = new JFormattedTextField(NumberFormat.getIntegerInstance());
+                                formattedTextField.setDocument(context.newTextAreaModel(el, Long::parseLong));
+                                component = formattedTextField;
+                                break;
+                            }
                             case "date":
                             case "datetime-local":
                             case "email":
@@ -589,20 +558,23 @@ public class HtmlPanel extends JPanel {
                             case "time":
                             case "url":
                             case "week":
-                            case "text":
+                            case "text": {
+                                int cols = 0;
+                                try {
+                                    if (el.hasAttr("cols")) {
+                                        cols = Integer.parseUnsignedInt(el.attr("cols"));
+                                    }
+                                } catch (Exception ex) {
+                                    log.warn("Unable to parse rows/cols for {}", el.html(), ex);
+                                }
+                                JTextField textArea = new JTextField(context.newTextAreaModel(el), el.text(), cols);
+                                add(panel, textArea, el, el, attr.copy(), false);
+
                                 component = new JTextField();
                                 break;
+                            }
                             default:
                                 continue;
-                        }
-                        //if (el.hasAttr("id")) {
-                        //    form().addInput(el, component);
-                        //}
-                        if (el.hasAttr("name")) {
-                            component.setName(el.attr("name"));
-                        }
-                        if (el.hasAttr("disabled")) {
-                            component.setEnabled(false);
                         }
                         add(panel, component, el, attr.copy());
                         continue;

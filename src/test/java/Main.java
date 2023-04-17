@@ -29,7 +29,7 @@ public class Main {
                         "  </tr>\n" +
                         "  <tr>\n" +
                         "    <td>January</td>\n" +
-                        "    <td><input type=\"checkbox\" name=\"foobox\"></td>\n" +
+                        "    <td><input type=\"number\" name=\"num\"></td>\n" +
                         "  </tr>\n" +
                         "</table><h1>Moaring <mark>codeing</mark></h1>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. <a href=\"foo\">Excepteur sint occaecat cupidatat non proident</a>, sunt in culpa qui officia deserunt mollit anim id est laborum. <P>testing <button type='button' disabled>foo!</button><hr><input type=\"checkbox\" name=\"foobox\"><input type='submit' align=\"right\">" +
                         "</body></html>", true)
