@@ -9,6 +9,11 @@ import org.slf4j.LoggerFactory;
 import javax.swing.*;
 import javax.swing.border.Border;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.net.URL;
 import java.text.AttributedCharacterIterator;
 import java.util.Map;
@@ -385,6 +390,24 @@ public class HtmlPanel extends JPanel {
                         continue;
                     }
 
+                    case "a": {
+                        Action action = context.newAction(el);
+                        JLabel label = new JLabel(action.getValue(Action.NAME).toString());
+                        label.addMouseListener(new MouseAdapter() {
+                            @Override
+                            public void mouseClicked(MouseEvent e) {
+                                action.actionPerformed(new ActionEvent(e.getSource(), e.getID(), "", e.getWhen(), e.getModifiersEx()));
+                            }
+                        });
+                        action.addPropertyChangeListener(new PropertyChangeListener() {
+                            @Override
+                            public void propertyChange(PropertyChangeEvent evt) {
+                                ///
+                            }
+                        });
+                        add(panel, label, el, attr.copy());
+                        continue;
+                    }
                     case "tt":
                     case "code":
                         renderContent(panel, el, attr.deriveFont(TEXT_ATTRIBUTE_MONOSPACE));
@@ -507,22 +530,12 @@ public class HtmlPanel extends JPanel {
                         JButton button;
                         switch (el.attr("type")) {
                             case "button":
-                                button = new JButton(context.newAction(el));
-                                break;
                             case "reset":
-                                button = new JButton(context.newAction(el));
-                                break;
                             case "submit":
                                 button = new JButton(context.newAction(el));
                                 break;
                             default:
                                 continue;
-                        }
-                        if (el.hasAttr("name")) {
-                            button.setName(el.attr("name"));
-                        }
-                        if (el.hasAttr("disabled")) {
-                            button.setEnabled(false);
                         }
                         add(panel, button, el, attr.copy());
                     }
@@ -653,6 +666,21 @@ public class HtmlPanel extends JPanel {
     @Override
     public Dimension getMinimumSize() {
         return adjustSize(super.getMinimumSize(), Math::max);
+    }
+
+    public HtmlPanel onSubmit() {
+        context().onSubmit();
+        return this;
+    }
+
+    public HtmlPanel onClicked() {
+        context().onSubmit();
+        return this;
+    }
+
+    public HtmlPanel onReset() {
+        context().onSubmit();
+        return this;
     }
 
     static class Attr implements Cloneable {

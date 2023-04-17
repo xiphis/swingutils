@@ -5,6 +5,8 @@ import java.awt.*;
 
 public class HtmlDialog extends JDialog {
 
+    private HtmlPanel panel;
+
     public HtmlDialog(Frame owner, String html, boolean modal) {
         this(owner, new HtmlContext(html), modal);
     }
@@ -12,7 +14,7 @@ public class HtmlDialog extends JDialog {
     public HtmlDialog(Frame owner, HtmlContext context, boolean modal) {
         super(owner, context.document().title(), modal);
 
-        HtmlPanel panel = new HtmlPanel(context, context.document().body());
+        panel = new HtmlPanel(context, context.document().body());
         getContentPane().add(panel, BorderLayout.CENTER);
 
         // TODO need to fix the bottom inset
@@ -21,5 +23,20 @@ public class HtmlDialog extends JDialog {
         //setResizable(context.document().body().hasAttr("resizable"));
 
         pack();
+    }
+
+    public HtmlDialog onSubmit() {
+        panel.onSubmit();
+        return this;
+    }
+
+    public HtmlDialog onClicked() {
+        panel.onClicked();
+        return this;
+    }
+
+    public HtmlDialog onReset() {
+        panel.onReset();
+        return this;
     }
 }

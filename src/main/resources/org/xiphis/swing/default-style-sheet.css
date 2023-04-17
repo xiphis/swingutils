@@ -27,6 +27,10 @@ time, mark, audio, video {
     background:transparent;
 }
 
+a {
+  color: blue;
+}
+
 h1 {
   font-size: 2em;
   font-weight: bolder;

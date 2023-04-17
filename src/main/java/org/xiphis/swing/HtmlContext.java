@@ -541,8 +541,37 @@ public class HtmlContext {
         return new HtmlAction(this, el, name);
     }
 
-
     public void actionPerformed(HtmlAction htmlAction, ActionEvent e) {
         log.info("actionPerformed({}, {})", htmlAction, e);
+        switch (htmlAction.element().tagName()) {
+            case "a":
+                break;
+            case "button":
+                switch (htmlAction.element().attr("type")) {
+                    case "submit":
+                    case "reset":
+                    default:
+                }
+                break;
+            case "input":
+                switch (htmlAction.element().attr("type")) {
+                    case "submit":
+                    case "checkbox":
+                    case "radio":
+                        break;
+                }
+        }
+    }
+
+    public void onSubmit() {
+
+    }
+
+    public void onClicked() {
+
+    }
+
+    public void onReset() {
+
     }
 }

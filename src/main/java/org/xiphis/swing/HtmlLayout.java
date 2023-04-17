@@ -220,8 +220,10 @@ public final class HtmlLayout implements LayoutManager2 {
                     row.rowX.add(new SizeRequirements(min.width, pref.width, max.width, c.getAlignmentX()));
                     row.rowY.add(new SizeRequirements(min.height, pref.height, max.height, c.getAlignmentY()));
 
-                    if (prevElement != currElement) {
+                    if (prevElement != currElement && !isChild(currElement, prevElement)) {
                         switch (currElement.tagName()) {
+                            case "a":
+                                break;
                             case "p":
                                 if (!(curr instanceof Element) && curr.previousSibling() != null) {
                                     break;
@@ -250,6 +252,8 @@ public final class HtmlLayout implements LayoutManager2 {
                 if (!isChild(prevElement, curr)) {
                     check: for (Element t : unwind(prevElement, curr)) {
                         switch (t.tagName()) {
+                            case "a":
+                                break;
                             case "h1":
                             case "h2":
                             case "h3":
@@ -260,7 +264,7 @@ public final class HtmlLayout implements LayoutManager2 {
                                 break check;
                             default:
                                 if (t.tag().formatAsBlock()) {
-                                    nextLine = true;
+                                    //nextLine = true;
                                     break check;
                                 }
                         }
