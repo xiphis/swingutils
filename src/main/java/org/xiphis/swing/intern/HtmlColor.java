@@ -1,4 +1,4 @@
-package org.xiphis.swing;
+package org.xiphis.swing.intern;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

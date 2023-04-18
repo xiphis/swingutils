@@ -1,4 +1,4 @@
-package org.xiphis.swing;
+package org.xiphis.swing.intern;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
@@ -26,6 +26,7 @@ import java.awt.font.TextAttribute;
 import java.io.*;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.text.ParseException;
 import java.util.*;
 import java.util.List;
 import java.util.function.Consumer;
@@ -571,8 +572,12 @@ public class HtmlContext {
     public HtmlAction.Textarea newTextAreaModel(Element el) {
         return new HtmlAction.Textarea(el, newAction(el), text -> text);
     }
-    public HtmlAction.Textarea newTextAreaModel(Element el, Function<String, Object> transform) {
+    public HtmlAction.Textarea newTextAreaModel(Element el, TextAreaParser<?> transform) {
         return new HtmlAction.Textarea(el, newAction(el), Objects.requireNonNull(transform));
+    }
+
+    public interface TextAreaParser<V> {
+        V parse(String text) throws ParseException;
     }
 
     public HtmlAction.Progress newProgressModel(Element el) {

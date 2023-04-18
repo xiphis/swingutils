@@ -1,4 +1,4 @@
-package org.xiphis.swing;
+package org.xiphis.swing.intern;
 
 import java.util.Objects;
 

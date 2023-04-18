@@ -1,4 +1,4 @@
-package org.xiphis.swing;
+package org.xiphis.swing.intern;
 
 import org.jsoup.nodes.Element;
 import org.jsoup.nodes.Node;

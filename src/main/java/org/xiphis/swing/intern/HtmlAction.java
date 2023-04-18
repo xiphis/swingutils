@@ -1,4 +1,4 @@
-package org.xiphis.swing;
+package org.xiphis.swing.intern;
 
 import org.jsoup.nodes.Element;
 import org.slf4j.Logger;
@@ -176,8 +176,8 @@ public class HtmlAction extends AbstractAction {
 
         private static final Logger LOG = LoggerFactory.getLogger(Textarea.class);
         private final HtmlAction htmlAction;
-        private final Function<String, Object> transform;
-        public Textarea(Element el, HtmlAction htmlAction, Function<String, Object> transform) {
+        private final HtmlContext.TextAreaParser<?> transform;
+        public Textarea(Element el, HtmlAction htmlAction, HtmlContext.TextAreaParser<?> transform) {
             this.htmlAction = htmlAction;
             this.transform = transform;
             htmlAction.addPropertyChangeListener(this::htmlListener);
@@ -206,7 +206,7 @@ public class HtmlAction extends AbstractAction {
         private void updateContent() {
             try {
                 String text = getText(0, getLength());
-                htmlAction.putValue(SELECTED_KEY, !text.isBlank() ? transform.apply(text) : null);
+                htmlAction.putValue(SELECTED_KEY, !text.isBlank() ? transform.parse(text) : null);
             } catch (Exception ex) {
                 LOG.warn("Failed to update content", ex);
             }

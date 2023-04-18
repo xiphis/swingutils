@@ -1,4 +1,4 @@
-package org.xiphis.swing;
+package org.xiphis.swing.intern;
 
 import com.google.gson.JsonObject;
 import org.jsoup.nodes.Element;

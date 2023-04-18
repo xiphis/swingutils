@@ -1,4 +1,4 @@
-package org.xiphis.swing;
+package org.xiphis.swing.intern;
 
 import org.jsoup.nodes.Element;
 import org.jsoup.nodes.Node;
@@ -9,11 +9,10 @@ import org.slf4j.LoggerFactory;
 import javax.swing.*;
 import javax.swing.border.Border;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
+import java.awt.event.*;
 import java.net.URL;
 import java.text.AttributedCharacterIterator;
+import java.text.DateFormat;
 import java.text.NumberFormat;
 import java.util.Map;
 import java.util.Objects;
@@ -24,7 +23,7 @@ import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static org.xiphis.swing.HtmlStyle.*;
+import static org.xiphis.swing.intern.HtmlStyle.*;
 
 public class HtmlPanel extends JPanel {
     private static final Pattern WHITESPACE = Pattern.compile("\\s+");
@@ -35,13 +34,6 @@ public class HtmlPanel extends JPanel {
     private final Element body;
     private final HtmlContext context;
 
-    public HtmlPanel(String html) {
-        this(new HtmlContext(html, true));
-        context.init();
-    }
-    private HtmlPanel(HtmlContext context) {
-        this(context, context.document());
-    }
     public HtmlPanel(HtmlContext context, Element body) {
         this(context, body, null);
     }
@@ -345,6 +337,67 @@ public class HtmlPanel extends JPanel {
             if (n.hasAttr("disabled")) {
                 comp.setEnabled(false);
             }
+            if (n.hasAttr("width") || n.hasAttr("height")) {
+                try {
+                    Dimension dim = new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE);
+                    float scaleX, scaleY;
+                    if (n.hasAttr("width")) {
+                        String width = n.attr("width");
+                        if (width.endsWith("%")) {
+                            scaleX = Math.max(0f, Math.min(1f, Float.parseFloat(width.substring(0, width.length() - 1)) / 100f));
+                        } else {
+                            scaleX = Float.NaN;
+                            dim.width = Integer.parseUnsignedInt(width);
+                        }
+                    } else {
+                        scaleX = Float.NaN;
+                    }
+                    if (n.hasAttr("height")) {
+                        String height = n.attr("height");
+                        if (height.endsWith("%")) {
+                            scaleY = Math.max(0f, Math.min(1f, Float.parseFloat(height.substring(0, height.length() - 1)) / 100f));
+                        } else {
+                            scaleY = Float.NaN;
+                            dim.height = Integer.parseUnsignedInt(height);
+                        }
+                    } else {
+                        scaleY = Float.NaN;
+                    }
+                    if (Float.isNaN(scaleX) && Float.isNaN(scaleY)) {
+                        if (dim.width != Integer.MAX_VALUE || dim.height != Integer.MAX_VALUE) {
+                            comp.setMaximumSize(dim);
+                            if (dim.width != Integer.MAX_VALUE && dim.height != Integer.MAX_VALUE) {
+                                comp.setSize(dim);
+                            }
+                        }
+                    } else {
+                        ComponentListener listener = new ComponentAdapter() {
+                            @Override
+                            public void componentResized(ComponentEvent e) {
+                                int width = dim.width;
+                                int height = dim.height;
+                                if (!Float.isNaN(scaleX)) {
+                                    width = (int) (e.getComponent().getWidth() * scaleX);
+                                }
+                                if (!Float.isNaN(scaleY)) {
+                                    height = (int) (e.getComponent().getHeight() * scaleY);
+                                }
+                                comp.setMaximumSize(new Dimension(width, height));
+                                if (width != Integer.MAX_VALUE && height != Integer.MAX_VALUE) {
+                                    comp.setSize(width, height);
+                                }
+                                panel.doLayout();
+                                super.componentResized(e);
+                            }
+                        };
+                        panel.addComponentListener(listener);
+                        //listener.componentResized(new ComponentEvent(panel, ComponentEvent.COMPONENT_RESIZED));
+                    }
+                } catch (Exception ex) {
+                    log.error("Failed to parse width/height for: {}", n);
+                }
+
+            }
             // TODO handle other common types...
             //if (n.hasAttr("width")) {
             //}
@@ -369,6 +422,9 @@ public class HtmlPanel extends JPanel {
                         add(panel, new JSeparator(), el, attr.copy());
                         continue;
                     }
+                    case "embed":
+                        add(panel, new JPanel(), el, attr.copy());
+                        continue;
                     case "table":
                         add(panel, new HtmlPanel(context, el), el,  attr.copy());
                         continue;
@@ -379,12 +435,19 @@ public class HtmlPanel extends JPanel {
                                 log.warn("Unable to find resource for {}", el.html());
                             } else {
                                 ImageIcon imageIcon = new ImageIcon(imageUrl);
+                                JLabel label = new JLabel(imageIcon);
 
-                                if (el.hasAttr("width") || el.hasAttr("height")) {
-                                    // TODO
+                                if (el.hasAttr("width") && el.hasAttr("height")) {
+                                    try {
+                                        int width = Integer.parseUnsignedInt(el.attr("width"));
+                                        int height = Integer.parseUnsignedInt(el.attr("height"));
+                                        Image newImage = imageIcon.getImage().getScaledInstance(width, height, Image.SCALE_SMOOTH);
+                                        label.setIcon(new ImageIcon(newImage));
+                                    } catch (Exception ex) {
+                                        log.warn("Failed to scale image for {}", el);
+                                    }
                                 }
 
-                                JLabel label = new JLabel(imageIcon);
                                 if (el.hasAttr("alt")) {
                                     label.setToolTipText(el.attr("alt"));
                                 }
@@ -543,20 +606,59 @@ public class HtmlPanel extends JPanel {
                                 }
                                 break;
                             case "number": {
-                                JFormattedTextField formattedTextField = new JFormattedTextField(NumberFormat.getIntegerInstance());
-                                formattedTextField.setDocument(context.newTextAreaModel(el, Long::parseLong));
+                                NumberFormat numberFormat = NumberFormat.getIntegerInstance();
+                                JFormattedTextField formattedTextField = new JFormattedTextField(numberFormat);
+                                formattedTextField.setDocument(context.newTextAreaModel(el, numberFormat::parse));
                                 component = formattedTextField;
                                 break;
                             }
-                            case "date":
-                            case "datetime-local":
-                            case "email":
-                            case "file":
+                            case "date": {
+                                DateFormat dateFormat = DateFormat.getDateInstance();
+                                JFormattedTextField formattedTextField = new JFormattedTextField(dateFormat);
+                                formattedTextField.setDocument(context.newTextAreaModel(el, dateFormat::parse));
+                                component = formattedTextField;
+                                break;
+                            }
+                            case "datetime-local": {
+                                DateFormat dateFormat = DateFormat.getDateTimeInstance();
+                                JFormattedTextField formattedTextField = new JFormattedTextField(dateFormat);
+                                formattedTextField.setDocument(context.newTextAreaModel(el, dateFormat::parse));
+                                component = formattedTextField;
+                                break;
+                            }
+                            case "time": {
+                                DateFormat dateFormat = DateFormat.getTimeInstance();
+                                JFormattedTextField formattedTextField = new JFormattedTextField(dateFormat);
+                                formattedTextField.setDocument(context.newTextAreaModel(el, dateFormat::parse));
+                                component = formattedTextField;
+                                break;
+                            }
+                            case "tel": {
+                                PatternFormatter formatter = new PatternFormatter();
+                                JFormattedTextField formattedTextField = new JFormattedTextField(formatter);
+                                if (el.hasAttr("pattern")) {
+                                    formatter.setPattern(Pattern.compile(el.attr("pattern")));
+                                }
+                                formattedTextField.setDocument(context.newTextAreaModel(el));
+                                component = formattedTextField;
+                                break;
+                            }
+                            case "url": {
+                                JFormattedTextField formattedTextField = new JFormattedTextField(UrlFormatter.INSTANCE);
+                                formattedTextField.setDocument(context.newTextAreaModel(el));
+                                component = formattedTextField;
+                                break;
+                            }
+                            case "email": {
+                                JFormattedTextField formattedTextField = new JFormattedTextField(
+                                        new PatternFormatter(PatternFormatter.EMAIL_PATTERN));
+                                formattedTextField.setDocument(context.newTextAreaModel(el));
+                                component = formattedTextField;
+                                break;
+                            }
                             case "month":
+                            case "file":
                             case "search":
-                            case "tel":
-                            case "time":
-                            case "url":
                             case "week":
                             case "text": {
                                 int cols = 0;
