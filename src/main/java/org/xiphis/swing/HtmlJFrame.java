@@ -37,47 +37,83 @@ import java.awt.*;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
-public class HtmlJDialog extends JDialog {
-
+public class HtmlJFrame extends JFrame {
     private HtmlJPanel panel;
 
-    public HtmlJDialog(Frame owner, String html, boolean modal) {
-        this(owner, new HtmlContext(html), modal);
-        panel.context().init();
+    /**
+     * Constructs a new frame that is initially invisible.
+     * <p>
+     * This constructor sets the component's locale property to the value
+     * returned by <code>JComponent.getDefaultLocale</code>.
+     *
+     * @throws HeadlessException if GraphicsEnvironment.isHeadless()
+     *                           returns true.
+     * @see GraphicsEnvironment#isHeadless
+     * @see Component#setSize
+     * @see Component#setVisible
+     * @see JComponent#getDefaultLocale
+     */
+    public HtmlJFrame(String html) throws HeadlessException {
+        this(null, html);
     }
 
-    public HtmlJDialog(Frame owner, HtmlContext context, boolean modal) {
-        super(owner, context.document().title(), modal);
+    /**
+     * Creates a <code>Frame</code> in the specified
+     * <code>GraphicsConfiguration</code> of
+     * a screen device and a blank title.
+     * <p>
+     * This constructor sets the component's locale property to the value
+     * returned by <code>JComponent.getDefaultLocale</code>.
+     *
+     * @param gc the <code>GraphicsConfiguration</code> that is used
+     *           to construct the new <code>Frame</code>;
+     *           if <code>gc</code> is <code>null</code>, the system
+     *           default <code>GraphicsConfiguration</code> is assumed
+     * @throws IllegalArgumentException if <code>gc</code> is not from
+     *                                  a screen device.  This exception is always thrown when
+     *                                  GraphicsEnvironment.isHeadless() returns true.
+     * @see GraphicsEnvironment#isHeadless
+     * @see JComponent#getDefaultLocale
+     * @since 1.3
+     */
+    public HtmlJFrame(GraphicsConfiguration gc, String html) {
+        this(gc, new HtmlContext(html));
+    }
+
+    public HtmlJFrame(GraphicsConfiguration gc, HtmlContext context) {
+        super(context.document().title(), gc);
+        init(context);
+    }
+
+    private void init(HtmlContext context) {
 
         panel = new HtmlJPanel(context, context.document().body());
-
-        getContentPane().add(panel, BorderLayout.CENTER);
-
-        //getContentPane().add(new JScrollPane(panel,
-        //        JScrollPane.VERTICAL_SCROLLBAR_NEVER, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER),
-        //        BorderLayout.CENTER);
+        getContentPane().add(new JScrollPane(panel), BorderLayout.CENTER);
 
         // TODO need to fix the bottom inset
         panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 45, 10));
 
         panel.context().applyStyle(panel, context.document().body());
+
+        panel.context().init();
+
         //setResizable(context.document().body().hasAttr("resizable"));
 
         pack();
         doLayout();
     }
 
-    public HtmlJDialog onSubmit(Predicate<HtmlEvent> handler) {
+    public HtmlJFrame onSubmit(Predicate<HtmlEvent> handler) {
         panel.onSubmit(handler);
         return this;
     }
 
-    public HtmlJDialog onClicked(String id, Consumer<HtmlEvent> handler) {
+    public HtmlJFrame onClicked(String id, Consumer<HtmlEvent> handler) {
         panel.onClicked(id, handler);
         return this;
     }
 
-    public HtmlJDialog onReset(Predicate<HtmlEvent> handler) {
+    public HtmlJFrame onReset(Predicate<HtmlEvent> handler) {
         panel.onReset(handler);
         return this;
     }
@@ -92,4 +128,5 @@ public class HtmlJDialog extends JDialog {
     public JsonObject toJson() {
         return panel.context().toJson();
     }
+
 }
