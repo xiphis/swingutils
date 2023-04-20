@@ -398,6 +398,66 @@ public class HtmlContext {
                                 log.info("unknown alignment: {} {} {}", el.tagName(), component.getClass().getSimpleName(), style.getPropertyValue(property));
                                 continue;
                         }
+                    case "overflow":
+                        if (component.getParent() instanceof JScrollPane) {
+                            JScrollPane scrollPane = (JScrollPane) component.getParent();
+                            switch (style.getPropertyValue(property)) {
+                                case "hidden":
+                                    scrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_NEVER);
+                                    scrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+                                    continue;
+                                case "scroll":
+                                    scrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
+                                    scrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_ALWAYS);
+                                    continue;
+                                case "auto":
+                                    scrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
+                                    scrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+                                    continue;
+                                default:
+                                    break;
+                            }
+                            log.info("unknown overflow: {} {} {}", el.tagName(), component.getClass().getSimpleName(), style.getPropertyValue(property));
+                            continue;
+                        }
+                    case "overflow-x":
+                        if (component.getParent() instanceof JScrollPane) {
+                            JScrollPane scrollPane = (JScrollPane) component.getParent();
+                            switch (style.getPropertyValue(property)) {
+                                case "hidden":
+                                    scrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+                                    continue;
+                                case "scroll":
+                                    scrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_ALWAYS);
+                                    continue;
+                                case "auto":
+                                    scrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+                                    continue;
+                                default:
+                                    break;
+                            }
+                            log.info("unknown overflow-x: {} {} {}", el.tagName(), component.getClass().getSimpleName(), style.getPropertyValue(property));
+                            continue;
+                        }
+                    case "overflow-y":
+                        if (component.getParent() instanceof JScrollPane) {
+                            JScrollPane scrollPane = (JScrollPane) component.getParent();
+                            switch (style.getPropertyValue(property)) {
+                                case "hidden":
+                                    scrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_NEVER);
+                                    continue;
+                                case "scroll":
+                                    scrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
+                                    continue;
+                                case "auto":
+                                    scrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
+                                    continue;
+                                default:
+                                    break;
+                            }
+                            log.info("unknown overflow-y: {} {} {}", el.tagName(), component.getClass().getSimpleName(), style.getPropertyValue(property));
+                            continue;
+                        }
                     case "margin":
                         if (component instanceof HtmlPanel) {
                             log.debug("margin: {}", style.getPropertyValue(property));
