@@ -50,12 +50,18 @@ public class HtmlJDialog extends JDialog {
         super(owner, context.document().title(), modal);
 
         panel = new HtmlJPanel(context, context.document().body());
-        getContentPane().add(new JScrollPane(panel), BorderLayout.CENTER);
+
+        getContentPane().add(panel, BorderLayout.CENTER);
+
+        //getContentPane().add(new JScrollPane(panel,
+        //        JScrollPane.VERTICAL_SCROLLBAR_NEVER, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER),
+        //        BorderLayout.CENTER);
 
         // TODO need to fix the bottom inset
         panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 45, 10));
 
-        setResizable(context.document().body().hasAttr("resizable"));
+        panel.context().applyStyle(panel, context.document().body());
+        //setResizable(context.document().body().hasAttr("resizable"));
 
         pack();
         doLayout();

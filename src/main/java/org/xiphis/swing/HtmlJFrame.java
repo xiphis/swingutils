@@ -93,6 +93,10 @@ public class HtmlJFrame extends JFrame {
         // TODO need to fix the bottom inset
         panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 45, 10));
 
+        panel.context().applyStyle(panel, context.document().body());
+
+        panel.context().init();
+
         //setResizable(context.document().body().hasAttr("resizable"));
 
         pack();
