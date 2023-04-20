@@ -30,9 +30,12 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import org.jsoup.nodes.Element;
 import org.xiphis.swing.intern.HtmlContext;
+import org.xiphis.swing.intern.HtmlIface;
 import org.xiphis.swing.intern.HtmlPanel;
 
-public class HtmlJPanel extends HtmlPanel {
+import java.awt.*;
+
+public class HtmlJPanel extends HtmlPanel implements HtmlIface {
     public HtmlJPanel(String html) {
         this(new HtmlContext(html, true));
         context().init();
@@ -45,5 +48,4 @@ public class HtmlJPanel extends HtmlPanel {
     HtmlJPanel(HtmlContext context, Element body) {
         super(context, body);
     }
-
 }

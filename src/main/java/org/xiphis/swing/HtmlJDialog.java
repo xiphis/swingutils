@@ -28,16 +28,16 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-import com.google.gson.JsonObject;
 import org.xiphis.swing.intern.HtmlContext;
 import org.xiphis.swing.intern.HtmlEvent;
+import org.xiphis.swing.intern.HtmlIface;
 
 import javax.swing.*;
 import java.awt.*;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
-public class HtmlJDialog extends JDialog {
+public class HtmlJDialog extends JDialog implements HtmlIface {
 
     private HtmlJPanel panel;
 
@@ -82,14 +82,8 @@ public class HtmlJDialog extends JDialog {
         return this;
     }
 
-    public Component componentById(String id) {
-        return panel.context().getComponentById(id);
-    }
-
-    public void setValues(JsonObject jsonObject) {
-        panel.context().setValues(jsonObject);
-    }
-    public JsonObject toJson() {
-        return panel.context().toJson();
+    @Override
+    public HtmlContext context() {
+        return panel.context();
     }
 }

@@ -770,8 +770,9 @@ public class HtmlContext {
         });
     }
 
-    public Component getComponentById(String id) {
-        return idMap.get(id);
+    public <T extends Component> T getComponentById(String id) {
+        //noinspection unchecked
+        return (T) idMap.get(id);
     }
 
     public void setValues(JsonObject jsonObject) {
